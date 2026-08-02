@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QQC STUDIO</title>
+    
+    <link rel="icon" type="image/x-icon" href="QQC1.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* =========================================
+           GLOBAL & VARIABLES
+        ========================================= */
+        :root {
+            --cyan: #00f0ff;
+            --purple: #bd00ff;
+            --gold: #d4af37;
+            --amber: #ffb703; 
+            --red: #ff003c;
+            --green: #00ff88;
+            --dark-bg: #030305;
+            --glass-bg: rgba(15, 15, 20, 0.7);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background-color: var(--dark-bg); 
+            font-family: 'Prompt', sans-serif; 
+            color: #fff; overflow: hidden; cursor: none; 
+        }
+        .eng-font { font-family: 'Orbitron', sans-serif; letter-spacing: 2px; }
+
+        /* =========================================
+           ULTIMATE BACKGROUND
+        ========================================= */
+        .bg-container {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -3;
+            background-image: linear-gradient(to bottom, rgba(3, 3, 5, 0.85), rgba(3, 3, 5, 0.98)), url('QQCBG.png');
+            background-size: cover; background-position: center;
+        }
+
+        .ambient-light {
+            position: fixed; border-radius: 50%; filter: blur(100px); opacity: 0.4; z-index: -2;
+            animation: floatLight 15s infinite alternate ease-in-out;
+        }
+        .light-1 { top: -10%; left: -10%; width: 40vw; height: 40vw; background: var(--cyan); }
+        .light-2 { bottom: -10%; right: -10%; width: 30vw; height: 30vw; background: var(--purple); animation-delay: -5s; }
+        
+        @keyframes floatLight {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(100px, 100px) scale(1.2); }
+        }
+
+        .cyber-grid {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1;
+            background-image: linear-gradient(rgba(0, 240, 255, 0.04) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(0, 240, 255, 0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+            transform: perspective(600px) rotateX(60deg) translateY(-100px) translateZ(-200px);
+            animation: gridMove 10s linear infinite; opacity: 0.5; pointer-events: none;
+        }
+        @keyframes gridMove {
+            0% { transform: perspective(600px) rotateX(60deg) translateY(0) translateZ(-200px); }
+            100% { transform: perspective(600px) rotateX(60deg) translateY(60px) translateZ(-200px); }
+        }
+
+        /* =========================================
+           CUSTOM CURSOR
+        ========================================= */
+        .cursor-dot {
+            position: fixed; top: 0; left: 0; width: 6px; height: 6px; 
+            background: var(--cyan); border-radius: 50%; z-index: 10000;
+            pointer-events: none; transform: translate3d(-50%, -50%, 0);
+            box-shadow: 0 0 10px var(--cyan); will-change: transform;
+        }
+        .cursor-ring {
+            position: fixed; top: 0; left: 0; width: 36px; height: 36px;
+            border: 1px solid rgba(0, 240, 255, 0.5); border-radius: 50%; z-index: 10000;
+            pointer-events: none; transform: translate3d(-50%, -50%, 0);
+            transition: width 0.2s, height 0.2s, border-color 0.2s, background-color 0.2s;
+            will-change: transform;
+        }
+        .cursor-ring.hovering { width: 60px; height: 60px; border-color: var(--cyan); background: rgba(0, 240, 255, 0.1); }
+
+        /* =========================================
+           SPA ROUTING
+        ========================================= */
+        .page-section {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100vh;
+            overflow-y: auto; overflow-x: hidden; visibility: hidden; opacity: 0;
+            transform: scale(0.95); transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+            display: flex; flex-direction: column; padding-top: 20px;
+        }
+        .page-section.active { visibility: visible; opacity: 1; z-index: 10; transform: scale(1); }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 240, 255, 0.3); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--cyan); }
+
+        /* =========================================
+           MUSIC PLAYER WIDGET
+        ========================================= */
+        .music-widget { position: fixed; bottom: 30px; right: 30px; z-index: 999; display: flex; flex-direction: column; align-items: flex-end; gap: 15px; }
+        .music-panel { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid rgba(0, 240, 255, 0.2); border-radius: 20px; padding: 15px 25px; display: flex; align-items: center; gap: 20px; transform: scale(0.9) translateX(120%); opacity: 0; pointer-events: none; transition: 0.5s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8); }
+        .music-panel.show { transform: scale(1) translateX(0); opacity: 1; pointer-events: auto; }
+        .music-btn { background: transparent; border: none; color: var(--cyan); font-size: 1.5rem; cursor: none; transition: 0.3s; }
+        .music-btn:hover { text-shadow: 0 0 15px var(--cyan); transform: scale(1.1); }
+        .volume-slider { -webkit-appearance: none; width: 100px; height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.1); outline: none; cursor: none; }
+        .volume-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--cyan); cursor: none; box-shadow: 0 0 10px var(--cyan); }
+        .toggle-music-btn { background: rgba(10, 10, 15, 0.9); border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; width: 55px; height: 55px; border-radius: 50%; font-size: 1.4rem; cursor: none; transition: 0.4s; display: flex; justify-content: center; align-items: center; }
+        .toggle-music-btn:hover, .toggle-music-btn.active { color: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 20px rgba(0, 240, 255, 0.4); }
+        .disc-spin { animation: spin 3s linear infinite; }
+        .disc-spin.paused { animation-play-state: paused; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* =========================================
+           UPDATE NOTIFICATION
+        ========================================= */
+        .update-notification {
+            position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 255, 136, 0.1); backdrop-filter: blur(15px);
+            border: 1px solid var(--green); border-radius: 15px;
+            padding: 15px 25px; z-index: 10001; display: flex; align-items: center; gap: 20px;
+            box-shadow: 0 10px 40px rgba(0, 255, 136, 0.2);
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            opacity: 0; visibility: hidden;
+        }
+        .update-notification.show { top: 30px; opacity: 1; visibility: visible; }
+        
+        .noti-icon { color: var(--green); font-size: 1.8rem; animation: ringBell 2s infinite; filter: drop-shadow(0 0 10px var(--green)); }
+        @keyframes ringBell {
+            0%, 100% { transform: rotate(0deg); }
+            10% { transform: rotate(15deg); } 20% { transform: rotate(-10deg); }
+            30% { transform: rotate(5deg); } 40% { transform: rotate(-5deg); }
+            50% { transform: rotate(0deg); }
+        }
+        .noti-text h4 { color: var(--green); font-family: 'Orbitron', sans-serif; font-size: 1.1rem; letter-spacing: 1px; margin-bottom: 2px;}
+        .noti-text p { color: #fff; font-size: 0.95rem; font-weight: 300; }
+        
+        .noti-actions { display: flex; gap: 10px; align-items: center; }
+        .btn-check-update {
+            background: var(--green); color: #000; border: none; padding: 8px 20px;
+            border-radius: 8px; font-family: 'Prompt', sans-serif; font-weight: 600; font-size: 0.95rem;
+            cursor: none; transition: 0.3s; box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+        .btn-check-update:hover { background: #fff; transform: scale(1.05); }
+        .btn-close-noti {
+            background: transparent; border: none; color: #a1a1aa; font-size: 1.3rem;
+            cursor: none; transition: 0.3s; padding: 5px;
+        }
+        .btn-close-noti:hover { color: #fff; transform: scale(1.2); }
+
+        .badge-update {
+            position: absolute; top: -10px; right: -10px; background: var(--green); color: #000;
+            font-family: 'Orbitron', sans-serif; font-size: 0.75rem; font-weight: 900;
+            padding: 4px 10px; border-radius: 20px; box-shadow: 0 0 15px var(--green);
+            animation: pulseBadge 1.5s infinite alternate; letter-spacing: 0.5px;
+            display: none; 
+        }
+        @keyframes pulseBadge {
+            0% { transform: scale(1); box-shadow: 0 0 5px var(--green); }
+            100% { transform: scale(1.1); box-shadow: 0 0 20px var(--green); }
+        }
+
+        /* =========================================
+           PAGE HEADERS
+        ========================================= */
+        .header-top { padding: 40px 5%; display: flex; justify-content: center; align-items: center; position: relative; margin-bottom: 30px; }
+        .back-btn {
+            position: absolute; left: 5%; padding: 12px 25px; color: #fff; text-decoration: none;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; 
+            font-size: 1rem; font-weight: 400; transition: 0.3s; display: flex; align-items: center; gap: 10px; cursor: none; z-index: 50;
+        }
+        .back-btn:hover { background: var(--cyan); color: #000; border-color: var(--cyan); box-shadow: 0 0 20px rgba(0,240,255,0.4); transform: translateX(-5px); }
+        
+        .page-title { 
+            font-size: 2.6rem; color: #fff; text-shadow: 0 0 15px rgba(0, 240, 255, 0.4); position: relative;
+            font-weight: 600; letter-spacing: 1px; text-align: center;
+        }
+        .page-title::after { content: ''; position: absolute; bottom: -12px; left: 25%; width: 50%; height: 3px; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); border-radius: 5px; }
+        .title-purple::after { background: var(--purple); box-shadow: 0 0 10px var(--purple); }
+        .title-red::after { background: var(--red); box-shadow: 0 0 10px var(--red); }
+        .title-green::after { background: var(--green); box-shadow: 0 0 10px var(--green); }
+        .title-amber::after { background: var(--amber); box-shadow: 0 0 10px var(--amber); }
+
+        /* =========================================
+           PAGE 1: HOME
+        ========================================= */
+        #page-home { justify-content: center; align-items: center; }
+        .logo-center { margin-bottom: 50px; animation: floatLogo 6s infinite ease-in-out alternate; }
+        .logo-center img { height: 240px; max-width: 90vw; object-fit: contain; filter: drop-shadow(0 0 25px rgba(0, 240, 255, 0.4)); }
+        @keyframes floatLogo { 0% { transform: translateY(0); } 100% { transform: translateY(-15px); } }
+
+        .button-group { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 1000px; padding: 0 20px;}
+        
+        .btn-main {
+            position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 280px; height: 140px; background: rgba(15, 15, 20, 0.5); backdrop-filter: blur(10px);
+            border-radius: 20px; text-decoration: none; color: #fff; cursor: none; overflow: visible; 
+            border: 1px solid rgba(255,255,255,0.1); transition: 0.4s; z-index: 2;
+        }
+        
+        .btn-main-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            border-radius: 20px; overflow: hidden; z-index: -1;
+        }
+        .btn-main-bg::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0,240,255,0.2), transparent); transition: 0.5s;
+        }
+        .btn-main:hover .btn-main-bg::before { left: 100%; }
+        .btn-main:hover { transform: translateY(-8px); border-color: var(--cyan); box-shadow: 0 15px 35px rgba(0, 240, 255, 0.2); background: rgba(15, 15, 20, 0.8); }
+        
+        .btn-main.contact:hover { border-color: var(--gold); box-shadow: 0 15px 35px rgba(212, 175, 55, 0.2); }
+        .btn-main.contact:hover i { color: var(--gold); }
+        
+        .btn-main.free-web .btn-main-bg::before { background: linear-gradient(90deg, transparent, rgba(189, 0, 255, 0.3), transparent); }
+        .btn-main.free-web:hover { border-color: var(--purple); box-shadow: 0 15px 35px rgba(189, 0, 255, 0.3); }
+        .btn-main.free-web:hover i { color: var(--purple); }
+
+        .btn-main.tutorial .btn-main-bg::before { background: linear-gradient(90deg, transparent, rgba(255, 0, 60, 0.3), transparent); }
+        .btn-main.tutorial:hover { border-color: var(--red); box-shadow: 0 15px 35px rgba(255, 0, 60, 0.3); }
+        .btn-main.tutorial:hover i { color: var(--red); }
+
+        .btn-main.update .btn-main-bg::before { background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.3), transparent); }
+        .btn-main.update:hover { border-color: var(--green); box-shadow: 0 15px 35px rgba(0, 255, 136, 0.3); }
+        .btn-main.update:hover i { color: var(--green); }
+
+        .btn-main.warning .btn-main-bg::before { background: linear-gradient(90deg, transparent, rgba(255, 183, 3, 0.3), transparent); }
+        .btn-main.warning:hover { border-color: var(--amber); box-shadow: 0 15px 35px rgba(255, 183, 3, 0.3); }
+        .btn-main.warning:hover i { color: var(--amber); }
+        
+        .btn-content { position: relative; z-index: 2; text-align: center; }
+        .btn-content i { font-size: 2.5rem; margin-bottom: 12px; color: #a1a1aa; transition: 0.4s; }
+        .btn-main:hover i { color: var(--cyan); transform: scale(1.1); }
+        .btn-content span { display: block; font-size: 1.2rem; font-weight: 700; letter-spacing: 1px; }
+        .btn-content p { font-size: 0.95rem; color: #8b8b9f; margin-top: 5px; font-weight: 300; }
+
+        /* =========================================
+           PAGE 1.5: SHOWCASE CHOICE
+        ========================================= */
+        .choice-box {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 320px; height: 380px; background: rgba(15, 15, 20, 0.7); backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 30px; text-decoration: none; transition: 0.4s; color: #fff; cursor: none;
+            position: relative; overflow: hidden; z-index: 2;
+        }
+        .choice-box::before {
+            content: ''; position: absolute; top: -2px; left: -2px; right: -2px; bottom: -2px;
+            background-size: 400% 400%; z-index: -1; border-radius: 32px;
+            animation: animateBorder 6s linear infinite; opacity: 0; transition: 0.5s;
+        }
+        .choice-box.custom::before { background: linear-gradient(45deg, var(--gold), transparent, var(--cyan), transparent); background-size: 400% 400%; }
+        .choice-box.free::before { background: linear-gradient(45deg, var(--purple), transparent, var(--cyan), transparent); background-size: 400% 400%; }
+        
+        .choice-box:hover::before { opacity: 1; filter: blur(10px); }
+        .choice-box:hover { transform: translateY(-10px); }
+        .choice-box.custom:hover { border-color: var(--gold); box-shadow: 0 15px 40px rgba(212, 175, 55, 0.3); }
+        .choice-box.free:hover { border-color: var(--purple); box-shadow: 0 15px 40px rgba(189, 0, 255, 0.3); }
+        
+        .choice-box i { font-size: 5.5rem; margin-bottom: 30px; transition: 0.4s; }
+        .choice-box.custom i { color: var(--gold); }
+        .choice-box.free i { color: var(--purple); }
+        
+        .choice-box span { font-size: 1.8rem; font-weight: 700; letter-spacing: 2px; margin-bottom: 10px;}
+        .choice-box p { font-size: 1.05rem; color: #a1a1aa; font-weight: 300; text-align: center; padding: 0 30px; line-height: 1.6;}
+        
+        .choice-box:hover i { transform: scale(1.1); filter: drop-shadow(0 0 20px currentColor); }
+
+        /* =========================================
+           PAGE 2: PORTFOLIO & FILTER TABS
+        ========================================= */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px 80px; width: 100%; perspective: 1200px; }
+        
+        .portfolio-tabs {
+            display: flex; justify-content: center; gap: 15px; margin-bottom: 50px; flex-wrap: wrap; position: relative; z-index: 10;
+        }
+        .tab-btn {
+            background: rgba(15, 15, 20, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); color: #fff;
+            padding: 12px 35px; border-radius: 30px; font-family: 'Orbitron', sans-serif; font-size: 1.1rem;
+            cursor: none; transition: 0.4s; letter-spacing: 1px; backdrop-filter: blur(10px); outline: none;
+        }
+        .tab-btn:hover { border-color: rgba(255,255,255,0.4); transform: translateY(-3px); }
+        
+        .tab-btn[data-filter="web-custom"].active { 
+            background: var(--gold); color: #000; box-shadow: 0 0 25px rgba(212,175,55,0.6); border-color: var(--gold); font-weight: 700; 
+        }
+        .tab-btn[data-filter="web-free"].active { 
+            background: var(--purple); color: #fff; box-shadow: 0 0 25px rgba(189,0,255,0.6); border-color: var(--purple); font-weight: 700; 
+        }
+        
+        /* 🔥 แก้ไข Grid ป้องกันการ์ดยืดกว้างเต็มจอ 🔥 */
+        .portfolio-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); 
+            gap: 40px; 
+            justify-content: center;
+            align-items: start;
+        }
+        
+        /* แอนิเมชันสำหรับกรองหมวดหมู่ */
+        .filter-item { transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+
+        /* 🔥 แก้บัค 3D และภาพทะลุ: ปรับจาก JS 3D เป็น CSS Hover ธรรมดาที่สมูทกว่า 🔥 */
+        .card-container { 
+            position: relative; border-radius: 20px; 
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+        }
+        .card-container:hover { transform: translateY(-10px); z-index: 10; }
+
+        .card-container::before {
+            content: ''; position: absolute; top: -2px; left: -2px; right: -2px; bottom: -2px;
+            background: linear-gradient(45deg, var(--cyan), transparent, var(--purple), transparent);
+            background-size: 400% 400%; z-index: -1; border-radius: 22px;
+            animation: animateBorder 6s linear infinite; opacity: 0; transition: 0.5s;
+        }
+        
+        .filter-item[data-category="web-custom"] .card-container::before {
+            background: linear-gradient(45deg, var(--gold), transparent, var(--cyan), transparent);
+            background-size: 400% 400%;
+        }
+        .card-container:hover::before { opacity: 1; filter: blur(10px); }
+        @keyframes animateBorder { 0% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } 100% { background-position: 0% 0%; } }
+
+        /* กรอบการ์ดหลัก มี overflow: hidden ควบคุมภาพไม่ให้ทะลุออก */
+        .card {
+            background: var(--glass-bg); backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; 
+            display: flex; flex-direction: column; overflow: hidden; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6); position: relative; z-index: 1; height: 100%;
+        }
+        
+        /* ควบคุมรูปภาพและเอฟเฟกต์การซูม (ลบ Glitch ออกให้ดูเนี๊ยบๆ) */
+        .card-image { width: 100%; aspect-ratio: 16 / 9; position: relative; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .card-image img { 
+            width: 100%; height: 100%; object-fit: cover; 
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1); filter: grayscale(10%) brightness(0.9); 
+        }
+        .card-container:hover .card-image img { 
+            transform: scale(1.08); filter: grayscale(0%) brightness(1.1); 
+        }
+
+        .badge {
+            position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.8); 
+            padding: 6px 18px; border-radius: 30px; font-size: 0.9rem; font-weight: 700; z-index: 2; letter-spacing: 1px;
+        }
+        .filter-item[data-category="web-custom"] .badge { border: 1px solid var(--gold); color: var(--gold); box-shadow: 0 0 10px rgba(212,175,55,0.3); }
+        .filter-item[data-category="web-free"] .badge { border: 1px solid var(--purple); color: var(--purple); box-shadow: 0 0 10px rgba(189,0,255,0.3); }
+
+        .card-content { padding: 40px; display: flex; flex-direction: column; flex-grow: 1; }
+        .card-content h3 { font-size: 1.6rem; margin-bottom: 15px; font-weight: 500; color: #fff; letter-spacing: 0.5px; line-height: 1.4; }
+        .card-content p { color: #b0b0c0; font-size: 1.05rem; line-height: 1.8; margin-bottom: 35px; flex-grow: 1; font-weight: 300; letter-spacing: 0.3px; }
+        
+        .btn-preview {
+            display: flex; align-items: center; justify-content: center; gap: 12px; padding: 15px 0;
+            background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.3); color: var(--cyan);
+            text-decoration: none; border-radius: 12px; transition: 0.4s; font-size: 1.1rem; font-weight: 500; cursor: none;
+            position: relative; overflow: hidden; z-index: 5; letter-spacing: 0.5px; margin-top: auto;
+        }
+        .btn-preview::after { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 2px; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); transition: 0.5s; }
+        .btn-preview:hover::after { left: 100%; }
+        
+        .filter-item[data-category="web-custom"] .btn-preview { border-color: rgba(212, 175, 55, 0.3); color: var(--gold); }
+        .filter-item[data-category="web-custom"] .btn-preview::after { background: var(--gold); box-shadow: 0 0 10px var(--gold); }
+        .filter-item[data-category="web-custom"] .btn-preview:hover { background: var(--gold); color: #000; box-shadow: 0 0 20px rgba(212,175,55,0.5); font-weight: 600; }
+        
+        .filter-item[data-category="web-free"] .btn-preview { border-color: rgba(189, 0, 255, 0.3); color: var(--purple); }
+        .filter-item[data-category="web-free"] .btn-preview::after { background: var(--purple); box-shadow: 0 0 10px var(--purple); }
+        .filter-item[data-category="web-free"] .btn-preview:hover { background: var(--purple); color: #fff; box-shadow: 0 0 20px rgba(189,0,255,0.5); font-weight: 600; }
+
+        /* =========================================
+           OTHER PAGES
+        ========================================= */
+        #page-contact, #page-free, #page-tutorial, #page-update, #page-deleted { justify-content: center; }
+        .contact-content { text-align: center; margin-top: -60px; z-index: 2; }
+        .title-gold { font-size: 3rem; color: var(--gold); margin-bottom: 20px; text-shadow: 0 0 20px rgba(212, 175, 55, 0.4); }
+        .subtitle { color: #a1a1aa; margin-bottom: 60px; font-size: 1.15rem; max-width: 600px; margin-left: auto; margin-right: auto; font-weight: 300; line-height: 1.7; letter-spacing: 0.5px; }
+        .contact-grid { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; }
+        
+        .contact-box {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 260px; height: 260px; background: rgba(15, 15, 20, 0.7); backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 25px; text-decoration: none; transition: 0.4s; color: #fff; cursor: none;
+            position: relative; overflow: hidden;
+        }
+        .contact-box::before { content: ''; position: absolute; width: 50px; height: 100%; background: rgba(255,255,255,0.1); transform: skewX(-20deg) translateX(-200px); transition: 0.5s; }
+        .contact-box:hover::before { transform: skewX(-20deg) translateX(300px); }
+        .contact-box i { font-size: 4rem; margin-bottom: 25px; transition: 0.4s; }
+        .contact-box span { font-size: 1.3rem; font-weight: 600; letter-spacing: 1px; }
+        
+        .contact-box.discord { color: #5865F2; }
+        .contact-box.discord:hover { border-color: #5865F2; box-shadow: 0 15px 40px rgba(88, 101, 242, 0.3); transform: translateY(-10px); }
+        .contact-box.facebook { color: #1877F2; }
+        .contact-box.facebook:hover { border-color: #1877F2; box-shadow: 0 15px 40px rgba(24, 119, 242, 0.3); transform: translateY(-10px); }
+        .contact-box:hover i { transform: scale(1.1); color: #fff; filter: drop-shadow(0 0 15px currentColor); }
+        .contact-box:hover span { color: #fff; }
+
+        .free-wrapper {
+            display: flex; flex-direction: column; align-items: center; max-width: 800px; margin: 0 auto;
+            background: var(--glass-bg); backdrop-filter: blur(15px); border: 1px solid rgba(189, 0, 255, 0.3);
+            border-radius: 20px; padding: 40px 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); z-index: 2;
+        }
+        .free-alert { color: var(--purple); font-size: 2.2rem; margin-bottom: 25px; text-shadow: 0 0 15px rgba(189, 0, 255, 0.4); font-weight: 600; text-align: center; }
+        .free-img-box { width: 100%; max-width: 600px; margin-bottom: 40px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+        .free-img-box img { width: 100%; height: auto; display: block; }
+        
+        .btn-free-fb {
+            display: flex; align-items: center; justify-content: center; gap: 15px; width: 100%; max-width: 400px;
+            padding: 18px 20px; background: rgba(24, 119, 242, 0.1); border: 1px solid #1877F2; border-radius: 15px; 
+            color: #fff; text-decoration: none; font-size: 1.2rem; font-weight: 500; transition: 0.4s; cursor: none; z-index: 5;
+        }
+        .btn-free-fb:hover { background: #1877F2; box-shadow: 0 10px 30px rgba(24, 119, 242, 0.5); transform: translateY(-5px); }
+
+        .video-container {
+            position: relative; width: 100%; max-width: 900px; margin: 0 auto; aspect-ratio: 16/9;
+            background: rgba(0,0,0,0.8); border: 2px solid rgba(255, 0, 60, 0.4); border-radius: 20px;
+            overflow: hidden; box-shadow: 0 15px 40px rgba(255, 0, 60, 0.2); z-index: 2;
+        }
+
+        .update-wrapper {
+            display: flex; gap: 30px; max-width: 1200px; margin: 0 auto; padding: 0 20px; flex-wrap: wrap; z-index: 2; position: relative;
+        }
+        .update-box {
+            flex: 1; min-width: 320px; background: var(--glass-bg); backdrop-filter: blur(15px);
+            border-radius: 20px; padding: 40px 30px; border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+        }
+        .update-box.pending { border-top: 5px solid var(--gold); }
+        .update-box.completed { border-top: 5px solid var(--green); }
+        
+        .update-header { font-size: 1.6rem; margin-bottom: 25px; font-weight: 600; display: flex; align-items: center; gap: 12px; }
+        .update-box.pending .update-header { color: var(--gold); }
+        .update-box.completed .update-header { color: var(--green); }
+        
+        .update-list { list-style: none; }
+        .update-list li { margin-bottom: 20px; padding-left: 30px; position: relative; color: #b0b0c0; font-size: 1.1rem; line-height: 1.6; }
+        
+        .update-box.pending .update-list li::before { 
+            content: '\f111'; font-family: 'Font Awesome 6 Free'; font-weight: 900; 
+            position: absolute; left: 0; color: var(--gold); font-size: 0.8rem; top: 6px;
+        }
+        .update-box.completed .update-list li::before { 
+            content: '\f058'; font-family: 'Font Awesome 6 Free'; font-weight: 900; 
+            position: absolute; left: 0; color: var(--green); font-size: 1.2rem; top: 3px;
+        }
+
+        .warning-wrapper {
+            display: flex; flex-direction: column; align-items: center; max-width: 900px; margin: 0 auto;
+            background: var(--glass-bg); backdrop-filter: blur(15px); border: 1px solid rgba(255, 183, 3, 0.3);
+            border-radius: 20px; padding: 50px 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); z-index: 2;
+        }
+        .warning-alert { 
+            color: var(--amber); font-size: 2rem; margin-bottom: 25px; text-shadow: 0 0 15px rgba(255, 183, 3, 0.4); 
+            font-weight: 500; text-align: center; letter-spacing: 1px;
+        }
+        .warning-img-box { 
+            width: 100%; max-width: 700px; border-radius: 12px; overflow: hidden; 
+            border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.6); 
+        }
+        .warning-img-box img { width: 100%; height: auto; display: block; }
+
+        /* Responsive Mobile */
+        @media (max-width: 768px) {
+            body { cursor: auto; } .cursor-dot, .cursor-ring { display: none; }
+            .ambient-light { display: none; } 
+            .logo-center img { height: 130px; margin-bottom: 30px;}
+            .button-group { flex-direction: column; gap: 15px; padding: 0 30px; }
+            .btn-main { width: 100%; max-width: 320px; height: 110px; cursor: pointer; margin: 0 auto;}
+            .btn-content i { font-size: 2rem; margin-bottom: 10px; }
+            .header-top { flex-direction: column; padding: 30px 20px; gap: 20px; }
+            .back-btn { position: relative; left: 0; width: 100%; justify-content: center; cursor: pointer; }
+            .page-title { font-size: 2rem; text-align: center; }
+            .portfolio-tabs { gap: 10px; }
+            .tab-btn { padding: 8px 15px; font-size: 0.85rem; }
+            .portfolio-grid { grid-template-columns: 1fr; gap: 40px; }
+            .btn-preview, .contact-box, .btn-free-fb, .choice-box { cursor: pointer; }
+            .contact-box { width: 200px; height: 200px; }
+            .contact-box i { font-size: 3rem; margin-bottom: 15px; }
+            .music-widget { bottom: 20px; right: 20px; }
+            .free-wrapper, .warning-wrapper { padding: 30px 15px; margin: 0 15px; }
+            .free-alert, .warning-alert { font-size: 1.5rem; }
+            .update-wrapper { flex-direction: column; }
+            .update-notification { width: 90%; flex-direction: column; text-align: center; gap: 10px; padding: 15px; }
+            .noti-actions { width: 100%; justify-content: center; }
+            .choice-box { width: 100%; max-width: 320px; height: 280px; }
+            .choice-box i { font-size: 4rem; margin-bottom: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 🌌 Ultimate Background -->
+    <div class="bg-container"></div>
+    <div class="cyber-grid"></div>
+    <div class="ambient-light light-1"></div>
+    <div class="ambient-light light-2"></div>
+
+    <!-- 🎯 Custom Cursor -->
+    <div class="cursor-dot" id="cursorDot"></div>
+    <div class="cursor-ring" id="cursorRing"></div>
+
+    <!-- 🎵 BGM -->
+    <audio id="bgMusic" loop>
+        <source src="music.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- 🔔 Notification System -->
+    <div class="update-notification" id="updateNotification">
+        <i class="fas fa-bell noti-icon"></i>
+        <div class="noti-text">
+            <h4>SYSTEM UPDATE</h4>
+            <p>มีการอัปเดตระบบใหม่ล่าสุด! เข้าไปดูได้เลย</p>
+        </div>
+        <div class="noti-actions">
+            <button class="btn-check-update hover-target" id="btnGoToUpdate">ตรวจสอบ</button>
+            <button class="btn-close-noti hover-target" id="btnCloseUpdate"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+
+    <!-- 🎛️ Music Player Widget -->
+    <div class="music-widget">
+        <div class="music-panel" id="musicPanel">
+            <button class="music-btn hover-target" id="playPauseBtn"><i class="fas fa-play"></i></button>
+            <i class="fas fa-volume-down" style="color: #a1a1aa; font-size: 0.9rem;"></i>
+            <input type="range" class="volume-slider hover-target" id="volControl" min="0" max="1" step="0.01" value="0.3">
+            <i class="fas fa-volume-up" style="color: #a1a1aa; font-size: 0.9rem;"></i>
+        </div>
+        <button class="toggle-music-btn hover-target" id="toggleMusicBtn">
+            <i class="fas fa-compact-disc disc-spin paused" id="discIcon"></i>
+        </button>
+    </div>
+
+    <!-- ================== PAGE 1: HOME ================== -->
+    <section id="page-home" class="page-section active">
+        <div class="logo-center hover-target">
+            <img src="QQClogo.png" alt="QQC Logo">
+        </div>
+        
+        <div class="button-group">
+            <div class="btn-main portfolio nav-btn hover-target" data-target="page-showcase-choice">
+                <div class="btn-main-bg"></div>
+                <div class="btn-content">
+                    <i class="fas fa-layer-group"></i>
+                    <span class="eng-font">SHOWCASE</span>
+                    <p>ตัวอย่างผลงานเว็บไซต์</p>
+                </div>
+            </div>
+            
+            <div class="btn-main free-web nav-btn hover-target" data-target="page-free">
+                <div class="btn-main-bg"></div>
+                <div class="btn-content">
+                    <i class="fas fa-gift"></i>
+                    <span class="eng-font">FREE SERVICE</span>
+                    <p>การทำเว็ปฟรี <span class="highlight-text" style="color: var(--purple);">[โปรดอ่าน]</span></p>
+                </div>
+            </div>
+
+            <div class="btn-main tutorial nav-btn hover-target" data-target="page-tutorial">
+                <div class="btn-main-bg"></div>
+                <div class="btn-content">
+                    <i class="fa-brands fa-youtube"></i>
+                    <span class="eng-font">TUTORIAL</span>
+                    <p>คลิปสอนใช้งานระบบ</p>
+                </div>
+            </div>
+
+            <div class="btn-main update nav-btn hover-target" data-target="page-update">
+                <div class="btn-main-bg"></div>
+                <span class="badge-update" id="badgeUpdate">NEW</span>
+                <div class="btn-content">
+                    <i class="fas fa-clock-rotate-left"></i>
+                    <span class="eng-font">CHANGELOG</span>
+                    <p>ติดตามอัปเดตระบบ</p>
+                </div>
+            </div>
+
+            <div class="btn-main warning nav-btn hover-target" data-target="page-deleted">
+                <div class="btn-main-bg"></div>
+                <div class="btn-content">
+                    <i class="fas fa-shield-halved"></i>
+                    <span class="eng-font">WARNING</span>
+                    <p>อ่านหากโดนลบเว็ป <span class="highlight-text" style="color: var(--amber);">[สำคัญ]</span></p>
+                </div>
+            </div>
+
+            <div class="btn-main contact nav-btn hover-target" data-target="page-contact">
+                <div class="btn-main-bg"></div>
+                <div class="btn-content">
+                    <i class="fas fa-microchip"></i>
+                    <span class="eng-font">INITIALIZE</span>
+                    <p>ระบบประเมิน & ติดต่อ</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================== PAGE 1.5: SHOWCASE CHOICE ================== -->
+    <section id="page-showcase-choice" class="page-section">
+        <div class="header-top">
+            <div class="back-btn nav-btn hover-target" data-target="page-home">
+                <i class="fas fa-chevron-left"></i> <span class="eng-font">SYSTEM_BACK</span>
+            </div>
+            <h1 class="page-title eng-font">SELECT SYSTEM</h1>
+        </div>
+        <div class="contact-content">
+            <p class="subtitle" style="margin-bottom: 40px;">กรุณาเลือกหมวดหมู่เว็บไซต์ที่คุณต้องการรับชมตัวอย่าง</p>
+            <div class="contact-grid">
+                <div class="choice-box custom hover-target choice-btn" data-category="web-custom">
+                    <i class="fas fa-gem" style="color: var(--gold);"></i>
+                    <span class="eng-font" style="color: var(--gold);">CUSTOM WEB</span>
+                    <p>ตัวอย่างเว็บไซต์สั่งทำระดับพรีเมียม <br>สวยหรู ฟังก์ชันครบ จัดเต็มทุกระบบ</p>
+                </div>
+                <div class="choice-box free hover-target choice-btn" data-category="web-free">
+                    <i class="fas fa-gift" style="color: var(--purple);"></i>
+                    <span class="eng-font" style="color: var(--purple);">FREE WEB</span>
+                    <p>ตัวอย่างเว็บไซต์ทำฟรี <br>สำหรับระบบรายชื่อและเซิร์ฟเวอร์เริ่มต้น</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================== PAGE 2: PORTFOLIO ================== -->
+    <section id="page-portfolio" class="page-section">
+        <div class="header-top">
+            <div class="back-btn nav-btn hover-target" data-target="page-showcase-choice">
+                <i class="fas fa-chevron-left"></i> <span class="eng-font">BACK TO MENU</span>
+            </div>
+            <h1 class="page-title">ตัวอย่างเว็บไซต์ของทางร้าน</h1>
+        </div>
+        
+        <div class="container">
+            <div class="portfolio-tabs">
+                <button class="tab-btn active hover-target" data-filter="web-custom">CUSTOM WEB</button>
+                <button class="tab-btn hover-target" data-filter="web-free">FREE WEB</button>
+            </div>
+
+            <div class="portfolio-grid">
+                
+                <!-- CUSTOM WEB -->
+                <div class="card-container hover-target filter-item" data-category="web-custom">
+                    <div class="card">
+                        <div class="card-image">
+                            <div class="badge eng-font">PREMIUM</div>
+                            <img src="https://media.discordapp.net/attachments/1532997291856756976/1533517754710102185/deee78e78565e3a8.jpg?ex=6a70c734&is=6a6f75b4&hm=ef559e48a8d23e2d7ce72fa2c4a328172d2a7417ad65ee9ec081d4929d674cca&=&format=webp&width=1726&height=864" alt="Custom 1">
+                        </div>
+                        <div class="card-content">
+                            <h3>Threetwoone</h3>
+                            <p>เว็บไซต์รายชื่อ Fivem ระบบแก้ไขทุกอย่าง เพิ่ม ลบ สมาชิก ผ่านหน้าเว็บได้เลย ราคาเริ่มต้น 50 บาทเท่านั้น!</p>
+                            <a href="https://threetwoonexyz.vercel.app/" target="_blank" rel="noopener noreferrer" class="btn-preview hover-target">
+                                ไปที่เว็บตัวอย่าง <i class="fas fa-satellite-dish"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FREE WEB -->
+
+                <div class="card-container hover-target filter-item" data-category="web-free">
+                    <div class="card">
+                        <div class="card-image">
+                            <div class="badge eng-font">FREE WEB</div>
+                            <img src="https://media.discordapp.net/attachments/1533077978404356096/1533426880256934028/image.png?ex=6a707291&is=6a6f2111&hm=78442a16d662eead7a58c047e0904627e61b7c907956514159315fce5144998f&=&format=webp&quality=lossless&width=1722&height=864" alt="ผลงาน 2">
+                        </div>
+                        <div class="card-content">
+                            <h3>SLAYERABYS</h3>
+                            <p>เว็บไซต์รายชื่อ Fivem ระบบแก้ไขทุกอย่าง เพิ่ม ลบ สมาชิก ผ่านหน้าเว็บได้เลย ราคาเริ่มต้น 50 บาทเท่านั้น!</p>
+                            <a href="https://slayerabys.vercel.app/" target="_blank" rel="noopener noreferrer" class="btn-preview hover-target">
+                                ไปที่เว็บตัวอย่าง <i class="fas fa-satellite-dish"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-container hover-target filter-item" data-category="web-free">
+                    <div class="card">
+                        <div class="card-image">
+                            <div class="badge eng-font">FREE WEB</div>
+                            <img src="https://media.discordapp.net/attachments/1533077978404356096/1533082856333770893/image.png?ex=6a6f322c&is=6a6de0ac&hm=e19166b08c045a03fe8f2a2e094d94227c81ec6c8536d1f4d162bd4a34f1e3fc&=&format=webp&quality=lossless&width=1734&height=864" alt="ผลงาน 3">
+                        </div>
+                        <div class="card-content">
+                            <h3>VERMILLION26</h3>
+                            <p>เว็บไซต์รายชื่อ Fivem ระบบแก้ไขทุกอย่าง เพิ่ม ลบ สมาชิก ผ่านหน้าเว็บได้เลย ราคาเริ่มต้น 50 บาทเท่านั้น!</p>
+                            <a href="https://vermillionimmortal.vercel.app/" target="_blank" rel="noopener noreferrer" class="btn-preview hover-target">
+                                ไปที่เว็บตัวอย่าง <i class="fas fa-satellite-dish"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-container hover-target filter-item" data-category="web-free">
+                    <div class="card">
+                        <div class="card-image">
+                            <div class="badge eng-font">FREE WEB</div>
+                            <img src="https://media.discordapp.net/attachments/1533077978404356096/1533095968734445660/image.png?ex=6a6f3e62&is=6a6dece2&hm=19ce77ec8731a43c4fc5479e039bbd4e559d963ee23b561839ea7f8cb965bcb8&=&format=webp&quality=lossless&width=1724&height=864" alt="ผลงาน 4">
+                        </div>
+                        <div class="card-content">
+                            <h3>Shelikenerdboy</h3>
+                            <p>เว็บไซต์รายชื่อ Fivem ระบบแก้ไขทุกอย่าง เพิ่ม ลบ สมาชิก ผ่านหน้าเว็บได้เลย ราคาเริ่มต้น 50 บาทเท่านั้น!</p>
+                            <a href="https://shelikenerdboy.vercel.app/" target="_blank" rel="noopener noreferrer" class="btn-preview hover-target">
+                                ไปที่เว็บตัวอย่าง <i class="fas fa-satellite-dish"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-container hover-target filter-item" data-category="web-free">
+                    <div class="card">
+                        <div class="card-image">
+                            <div class="badge eng-font">FREE WEB</div>
+                            <img src="https://media.discordapp.net/attachments/1533077978404356096/1533532334312128703/image.png?ex=6a70d4c8&is=6a6f8348&hm=d71d1b35af148d2a1517882c4e620815b211060db4b64ef4ed70719be277f81d&=&format=webp&quality=lossless&width=550&height=271" alt="ผลงาน 5">
+                        </div>
+                        <div class="card-content">
+                            <h3>Raywindzy658</h3>
+                            <p>เว็บไซต์รายชื่อ Fivem ระบบแก้ไขทุกอย่าง เพิ่ม ลบ สมาชิก ผ่านหน้าเว็บได้เลย ราคาเริ่มต้น 50 บาทเท่านั้น!</p>
+                            <a href="https://raywindzy658.vercel.app/" target="_blank" rel="noopener noreferrer" class="btn-preview hover-target">
+                                ไปที่เว็บตัวอย่าง <i class="fas fa-satellite-dish"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-container hover-target filter-item" data-category="web-free">
+                    <div class="card">
+                        <div class="card-image">
+                            <div class="badge eng-font">FREE WEB</div>
+                            <img src="https://media.discordapp.net/attachments/1533077978404356096/1533354624906432677/image.png?ex=6a702f46&is=6a6eddc6&hm=dd339ef7fbe4d5873c7653206df119b20745d502cc0315ea1333494309f0b638&=&format=webp&quality=lossless&width=550&height=276" alt="ผลงาน 6">
+                        </div>
+                        <div class="card-content">
+                            <h3>RUARAP</h3>
+                            <p>เว็บไซต์รายชื่อ Fivem ระบบแก้ไขทุกอย่าง เพิ่ม ลบ สมาชิก ผ่านหน้าเว็บได้เลย ราคาเริ่มต้น 50 บาทเท่านั้น!</p>
+                            <a href="https://ruarap.vercel.app/" target="_blank" rel="noopener noreferrer" class="btn-preview hover-target">
+                                ไปที่เว็บตัวอย่าง <i class="fas fa-satellite-dish"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-container hover-target filter-item" data-category="web-free">
+                    <div class="card">
+                        <div class="card-image">
+                            <div class="badge eng-font">FREE WEB</div>
+                            <img src="https://media.discordapp.net/attachments/1533077978404356096/1533398221228081192/image.png?ex=6a7057e1&is=6a6f0661&hm=89c3d29ba7e68af35a285cfbb2670d2eb8d7542413ebd993f0e5c5d2c9325853&=&format=webp&quality=lossless&width=1730&height=864" alt="ผลงาน 7">
+                        </div>
+                        <div class="card-content">
+                            <h3>DekEzRank</h3>
+                            <p>เว็บไซต์รายชื่อ Fivem ระบบแก้ไขทุกอย่าง เพิ่ม ลบ สมาชิก ผ่านหน้าเว็บได้เลย ราคาเริ่มต้น 50 บาทเท่านั้น!</p>
+                            <a href="https://dek-ez-rank.vercel.app/" target="_blank" rel="noopener noreferrer" class="btn-preview hover-target">
+                                ไปที่เว็บตัวอย่าง <i class="fas fa-satellite-dish"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-container hover-target filter-item" data-category="web-free">
+                    <div class="card">
+                        <div class="card-image">
+                            <div class="badge eng-font">FREE WEB</div>
+                            <img src="https://media.discordapp.net/attachments/1533077978404356096/1533436503110193202/image.png?ex=6a707b88&is=6a6f2a08&hm=fc50dd6fd171aeee0526290d57fe90a515a672f2359aef6df684f45d842730aa&=&format=webp&quality=lossless&width=1749&height=864" alt="ผลงาน 8">
+                        </div>
+                        <div class="card-content">
+                            <h3>Eightsixone</h3>
+                            <p>เว็บไซต์รายชื่อ Fivem ระบบแก้ไขทุกอย่าง เพิ่ม ลบ สมาชิก ผ่านหน้าเว็บได้เลย ราคาเริ่มต้น 50 บาทเท่านั้น!</p>
+                            <a href="https://eightsixone.vercel.app/" target="_blank" rel="noopener noreferrer" class="btn-preview hover-target">
+                                ไปที่เว็บตัวอย่าง <i class="fas fa-satellite-dish"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                                <div class="card-container hover-target filter-item" data-category="web-free">
+                    <div class="card">
+                        <div class="card-image">
+                            <div class="badge eng-font">FREE WEB</div>
+                            <img src="https://media.discordapp.net/attachments/1533077978404356096/1533510387486687534/image.png?ex=6a70c057&is=6a6f6ed7&hm=37fc5502678eddbc7a55f8d05a827f3c3e36b2bb72f758d33af4775c99b6118f&=&format=webp&quality=lossless&width=1732&height=864" alt="ผลงาน 8">
+                        </div>
+                        <div class="card-content">
+                            <h3>SAMEWEKNOW</h3>
+                            <p>เว็บไซต์รายชื่อ Fivem ระบบแก้ไขทุกอย่าง เพิ่ม ลบ สมาชิก ผ่านหน้าเว็บได้เลย ราคาเริ่มต้น 50 บาทเท่านั้น!</p>
+                            <a href="https://sameweknow.vercel.app/" target="_blank" rel="noopener noreferrer" class="btn-preview hover-target">
+                                ไปที่เว็บตัวอย่าง <i class="fas fa-satellite-dish"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ================== PAGE 3: CONTACT ================== -->
+    <section id="page-contact" class="page-section">
+        <div class="header-top">
+            <div class="back-btn nav-btn hover-target" data-target="page-home">
+                <i class="fas fa-chevron-left"></i> <span class="eng-font">SYSTEM_BACK</span>
+            </div>
+        </div>
+        <div class="contact-content">
+            <h1 class="title-gold eng-font">SECURE CONNECTION</h1>
+            <p class="subtitle">สั่งทำเว็บรายชื่อ เว็บต่างๆ ตามที่คุณต้องการ บรีฟได้ มีเว็บสำเร็จขายด้วยพร้อมเปิดให้ บริการดี คุยง่าย ราคาเริ่มต้นเพียง 50 บาทเท่านั้น! <br>ติดต่อช่องทางด้านล่างเลย!</p>
+            <div class="contact-grid">
+                
+                <a href="https://discord.com/invite/qGapRqJsdw" target="_blank" rel="noopener noreferrer" class="contact-box discord hover-target">
+                    <i class="fa-brands fa-discord"></i>
+                    <span class="eng-font">DISCORD</span>
+                </a>
+                
+                <a href="https://www.facebook.com/dnxwtf" target="_blank" rel="noopener noreferrer" class="contact-box facebook hover-target">
+                    <i class="fa-brands fa-facebook-f"></i>
+                    <span class="eng-font">FACEBOOK</span>
+                </a>
+                
+            </div>
+        </div>
+    </section>
+
+    <!-- ================== PAGE 4: FREE WEB ================== -->
+    <section id="page-free" class="page-section">
+        <div class="header-top">
+            <div class="back-btn nav-btn hover-target" data-target="page-home">
+                <i class="fas fa-chevron-left"></i> <span class="eng-font">SYSTEM_BACK</span>
+            </div>
+            <h1 class="page-title title-purple eng-font">FREE WEB SERVICE</h1>
+        </div>
+        
+        <div class="free-wrapper">
+            <h2 class="free-alert"><i class="fas fa-gift"></i> โปรดอ่านรายละเอียด</h2>
+            
+            <div class="free-img-box">
+                <img src="ct.png" alt="รายละเอียดทำเว็ปฟรี">
+            </div>
+            
+            <a href="https://www.facebook.com/dnxwtf" target="_blank" rel="noopener noreferrer" class="btn-free-fb hover-target">
+                <i class="fa-brands fa-facebook-f"></i>
+                <span class="eng-font">ติดต่อทำฟรีที่ FACEBOOK</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- ================== PAGE 5: TUTORIAL ================== -->
+    <section id="page-tutorial" class="page-section">
+        <div class="header-top">
+            <div class="back-btn nav-btn hover-target" data-target="page-home">
+                <i class="fas fa-chevron-left"></i> <span class="eng-font">SYSTEM_BACK</span>
+            </div>
+            <h1 class="page-title title-red eng-font">VIDEO TUTORIAL</h1>
+        </div>
+        
+        <div class="container">
+            <div class="video-container">
+                <iframe width="100%" height="100%" src="https://youtu.be/xekLidVLRaM?si=xgaEssLC1KOvOulr" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================== PAGE 6: UPDATE ================== -->
+    <section id="page-update" class="page-section">
+        <div class="header-top">
+            <div class="back-btn nav-btn hover-target" data-target="page-home">
+                <i class="fas fa-chevron-left"></i> <span class="eng-font">SYSTEM_BACK</span>
+            </div>
+            <h1 class="page-title title-green eng-font">SYSTEM UPDATE</h1>
+        </div>
+        
+        <div class="update-wrapper">
+            
+            <div class="update-box pending">
+                <div class="update-header">
+                    <i class="fas fa-hourglass-half"></i> สิ่งที่จะอัปเดต
+                </div>
+                <ul class="update-list">
+                    <li>[เว็ปฟรี] ระบบเพลงเร็วๆนี้</li>
+                </ul>
+            </div>
+
+            <div class="update-box completed">
+                <div class="update-header">
+                    <i class="fas fa-check-circle"></i> สิ่งที่อัปเดตแล้ว
+                </div>
+                <ul class="update-list">
+                    <li>[เว็ปฟรี] ระบบแก้ไขโปรไฟล์สมาชิกรายบุคคล!</li>
+                    <li>[เว็ปฟรี] แก้ปรับแต่งระบบแจ้งเตือนหน้า Admin!</li>
+                </ul>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ================== PAGE 7: DELETED WARNING ================== -->
+    <section id="page-deleted" class="page-section">
+        <div class="header-top">
+            <div class="back-btn nav-btn hover-target" data-target="page-home">
+                <i class="fas fa-chevron-left"></i> <span class="eng-font">SYSTEM_BACK</span>
+            </div>
+            <h1 class="page-title title-amber eng-font">TERMS & CONDITIONS</h1>
+        </div>
+        
+        <div class="warning-wrapper">
+            <h2 class="warning-alert"><i class="fas fa-shield-halved"></i> กรณีเว็บไซต์ถูกระงับหรือลบ</h2>
+            
+            <div class="warning-img-box">
+                <img src="jt.png" alt="เงื่อนไขและข้อตกลง กรณีเว็ปถูกลบ">
+            </div>
+            
+        </div>
+    </section>
+
+    <!-- ================== JAVASCRIPT ================== -->
+    <script>
+        // =========================================
+        // CONFIGURATION
+        // =========================================
+        const ENABLE_UPDATE_ALERT = true; 
+
+        // 1. ระบบแจ้งเตือน
+        const notiBanner = document.getElementById('updateNotification');
+        const badgeUpdate = document.getElementById('badgeUpdate');
+        const btnGoToUpdate = document.getElementById('btnGoToUpdate');
+        const btnCloseUpdate = document.getElementById('btnCloseUpdate');
+
+        if (ENABLE_UPDATE_ALERT) {
+            if(badgeUpdate) badgeUpdate.style.display = 'block';
+            setTimeout(() => {
+                if(notiBanner) notiBanner.classList.add('show');
+            }, 1500);
+        }
+
+        if(btnCloseUpdate) {
+            btnCloseUpdate.addEventListener('click', () => {
+                notiBanner.classList.remove('show');
+            });
+        }
+
+        // 2. ระบบ Custom Cursor
+        const dot = document.getElementById("cursorDot");
+        const ring = document.getElementById("cursorRing");
+        const hoverTargets = document.querySelectorAll('.hover-target, .tab-btn, .choice-btn');
+        
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        let ringX = mouseX;
+        let ringY = mouseY;
+        let isDesktop = window.innerWidth > 768;
+
+        window.addEventListener("mousemove", (e) => {
+            if(!isDesktop) return;
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        function animateCursor() {
+            if(isDesktop) {
+                dot.style.transform = `translate3d(calc(${mouseX}px - 50%), calc(${mouseY}px - 50%), 0)`;
+                ringX += (mouseX - ringX) * 0.25; 
+                ringY += (mouseY - ringY) * 0.25;
+                ring.style.transform = `translate3d(calc(${ringX}px - 50%), calc(${ringY}px - 50%), 0)`;
+            }
+            requestAnimationFrame(animateCursor);
+        }
+        animateCursor();
+
+        hoverTargets.forEach(target => {
+            target.addEventListener('mouseenter', () => {
+                if(isDesktop) {
+                    ring.classList.add('hovering');
+                    dot.style.transform = `translate3d(calc(${mouseX}px - 50%), calc(${mouseY}px - 50%), 0) scale(0.5)`;
+                }
+            });
+            target.addEventListener('mouseleave', () => {
+                if(isDesktop) {
+                    ring.classList.remove('hovering');
+                }
+            });
+        });
+
+        // 3. ระบบเปลี่ยนหน้าต่าง (SPA Routing)
+        const navBtns = document.querySelectorAll('.nav-btn');
+        const pages = document.querySelectorAll('.page-section');
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const filterItems = document.querySelectorAll('.filter-item');
+
+        function filterPortfolio(filterValue) {
+            filterItems.forEach(item => {
+                if (item.getAttribute('data-category') === filterValue) {
+                    item.style.display = 'block';
+                    setTimeout(() => {
+                        item.style.opacity = '1';
+                        item.style.transform = 'scale(1)';
+                    }, 50);
+                } else {
+                    item.style.opacity = '0';
+                    item.style.transform = 'scale(0.8)';
+                    setTimeout(() => {
+                        if (!item.style.opacity || item.style.opacity === '0') {
+                            item.style.display = 'none';
+                        }
+                    }, 400); 
+                }
+            });
+        }
+
+        function goToPage(targetId) {
+            pages.forEach(page => {
+                page.classList.remove('active');
+                if(page.id === targetId) {
+                    setTimeout(() => page.scrollTo(0, 0), 10);
+                }
+            });
+            document.getElementById(targetId).classList.add('active');
+        }
+
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetId = btn.getAttribute('data-target');
+                if(targetId === 'page-update') {
+                    if(notiBanner) notiBanner.classList.remove('show');
+                    if(badgeUpdate) badgeUpdate.style.display = 'none';
+                }
+                goToPage(targetId);
+            });
+        });
+
+        if(btnGoToUpdate) {
+            btnGoToUpdate.addEventListener('click', () => {
+                if(notiBanner) notiBanner.classList.remove('show');
+                if(badgeUpdate) badgeUpdate.style.display = 'none';
+                goToPage('page-update');
+            });
+        }
+
+        // 4. ระบบเลือกหมวดหมู่จากหน้า Showcase Choice
+        const choiceBtns = document.querySelectorAll('.choice-btn');
+        choiceBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const category = btn.getAttribute('data-category');
+                
+                tabBtns.forEach(b => b.classList.remove('active'));
+                const targetTab = document.querySelector(`.tab-btn[data-filter="${category}"]`);
+                if(targetTab) targetTab.classList.add('active');
+                
+                filterPortfolio(category);
+                goToPage('page-portfolio');
+            });
+        });
+
+        // ระบบ Portfolio Filter คลิกแท็บเปลี่ยนหมวด
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                filterPortfolio(btn.getAttribute('data-filter'));
+            });
+        });
+
+        // 5. ระบบเครื่องเล่นเพลง
+        const audio = document.getElementById("bgMusic");
+        const playPauseBtn = document.getElementById("playPauseBtn");
+        const volControl = document.getElementById("volControl");
+        const toggleMusicBtn = document.getElementById("toggleMusicBtn");
+        const musicPanel = document.getElementById("musicPanel");
+        const discIcon = document.getElementById("discIcon");
+        
+        let isPlaying = false;
+        audio.volume = 0.3;
+
+        let hasInteracted = false;
+        document.body.addEventListener('click', () => {
+            if (!hasInteracted && !isPlaying) {
+                audio.play().then(() => {
+                    playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    discIcon.classList.remove("paused");
+                    toggleMusicBtn.style.color = 'var(--cyan)';
+                    isPlaying = true;
+                    hasInteracted = true;
+                }).catch(err => console.log("Autoplay prevented:", err));
+            }
+        }, { once: true }); 
+
+        toggleMusicBtn.addEventListener("click", () => {
+            musicPanel.classList.toggle("show");
+            toggleMusicBtn.classList.toggle("active");
+        });
+
+        playPauseBtn.addEventListener("click", (e) => {
+            e.stopPropagation(); 
+            if (isPlaying) {
+                audio.pause();
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                discIcon.classList.add("paused");
+                toggleMusicBtn.style.color = '#fff';
+            } else {
+                audio.play();
+                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                discIcon.classList.remove("paused");
+                toggleMusicBtn.style.color = 'var(--cyan)';
+            }
+            isPlaying = !isPlaying;
+            hasInteracted = true; 
+        });
+
+        volControl.addEventListener("input", (e) => {
+            audio.volume = e.target.value;
+        });
+        
+        window.addEventListener('resize', () => { isDesktop = window.innerWidth > 768; });
+    </script>
+</body>
+</html>
